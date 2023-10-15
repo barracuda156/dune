@@ -12,11 +12,13 @@
 CAMLextern int caml_convert_signal_number(int);
 
 #if defined(__APPLE__)
+# include <AvailabilityMacros.h>
 
-# if defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
+# if (MAC_OS_X_VERSION_MAX_ALLOWED >= 1060) && !defined(__ppc__)
 #  define USE_POSIX_SPAWN
-#  define vfork fork
 # endif
+
+# define vfork fork
 
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -44,7 +46,6 @@ static int __pthread_fchdir(int fd) {
   return syscall(SYS___pthread_fchdir, fd);
 #pragma clang diagnostic pop
 }
-
 
 CAMLprim value spawn_is_osx()
 {
@@ -89,13 +90,6 @@ CAMLprim value spawn_is_osx()
    +-----------------------------------------------------------------+ */
 
 #if defined(__APPLE__) || defined(__HAIKU__)
-
-/* vfork(2) is deprecated on macOS >= 12, so we use fork(2) instead. */
-# if defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
-#  if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120000
-#   define vfork fork
-#  endif
-# endif
 
 static int safe_pipe(int fd[2])
 {
@@ -449,7 +443,13 @@ static void init_spawn_info(struct spawn_info *info,
                             value v_setpgid,
                             value v_sigprocmask)
 {
-  extern char ** environ;
+
+#ifdef __APPLE__
+# include <crt_externs.h>
+# define environ (*_NSGetEnviron())
+#else
+  extern char **environ;
+#endif
 
   info->std_fds[0] = Int_val(v_stdin);
   info->std_fds[1] = Int_val(v_stdout);
