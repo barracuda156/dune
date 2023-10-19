@@ -449,7 +449,12 @@ static void init_spawn_info(struct spawn_info *info,
                             value v_setpgid,
                             value v_sigprocmask)
 {
-  extern char ** environ;
+#ifdef __APPLE__
+# include <crt_externs.h>
+# define environ (*_NSGetEnviron())
+#else
+  extern char **environ;
+#endif
 
   info->std_fds[0] = Int_val(v_stdin);
   info->std_fds[1] = Int_val(v_stdout);
