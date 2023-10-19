@@ -12,8 +12,9 @@
 CAMLextern int caml_convert_signal_number(int);
 
 #if defined(__APPLE__)
+# include <AvailabilityMacros.h>
 
-# if defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
+# if (MAC_OS_X_VERSION_MAX_ALLOWED >= 1060) && !defined(__ppc__)
 #  define USE_POSIX_SPAWN
 #  define vfork fork
 # endif
@@ -89,13 +90,6 @@ CAMLprim value spawn_is_osx()
    +-----------------------------------------------------------------+ */
 
 #if defined(__APPLE__) || defined(__HAIKU__)
-
-/* vfork(2) is deprecated on macOS >= 12, so we use fork(2) instead. */
-# if defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
-#  if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120000
-#   define vfork fork
-#  endif
-# endif
 
 static int safe_pipe(int fd[2])
 {
